@@ -1,5 +1,8 @@
-QReg Repository
+# QReg Repository
 ========================
+
+
+## Overview
 
 This project implements the Query-Centric Regression, named QReg.
 QReg is a ensemble methods based on various base regression models.
@@ -8,13 +11,15 @@ Current QReg support linear, polynomial, decision tree, xgboost, gboosting regre
 
 The main function is located in qregpy/qreg.py
 
-### Python Version Requirement
+## Dependencies
 >=Python 3.6, requires scipy, xgboost, numpy, scikit-learn
 
-### How to install
-'pip install qregpy'
+####  How to install
+``pip install qregpy``
 
-### How to use
+####  How to use
+   ```
+
 from qregpy import qreg
 import pandas as pd
 
@@ -28,4 +33,6 @@ y = df[headerY].values
 reg = qreg.QReg(base_models=["linear","xgboost"], verbose=True).fit(X, y)
 
 reg.predict([[93.35, 53.04], [60.84, 41.96]])
+   ```
+
 ---------------
