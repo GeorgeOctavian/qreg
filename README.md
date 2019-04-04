@@ -1,5 +1,5 @@
 # QReg Repository
-========================
+==============================
 
 
 ## Overview
@@ -9,17 +9,14 @@ QReg is a ensemble methods based on various base regression models.
 
 Current QReg support linear, polynomial, decision tree, xgboost, gboosting regression as its base models.
 
-The main function is located in qregpy/qreg.py
-
 ## Dependencies
->=Python 3.6, requires scipy, xgboost, numpy, scikit-learn
+Python 3.6 or higher, requires scipy, xgboost, numpy, scikit-learn
 
 ####  How to install
 ``pip install qregpy``
 
 ####  How to use
-   ```
-
+```
 from qregpy import qreg
 import pandas as pd
 
@@ -33,6 +30,6 @@ y = df[headerY].values
 reg = qreg.QReg(base_models=["linear","xgboost"], verbose=True).fit(X, y)
 
 reg.predict([[93.35, 53.04], [60.84, 41.96]])
-   ```
+```
 
 ---------------
