@@ -1,5 +1,5 @@
 .git/
 .idea/
 *.pyc
-qregpy.egg_info/
+qregpy.egg-info/
 dist/
