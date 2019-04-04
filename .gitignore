@@ -2,3 +2,4 @@
 .idea/
 *.pyc
 qregpy.egg_info/
+dist/

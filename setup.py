@@ -11,7 +11,7 @@ with open('LICENSE') as f:
 
 setup(
     name='qregpy',
-    version='1.0',
+    version='1.1',
     description='Query-centric regression model.',
     classifiers=[
         'Development Status :: 1.0',
