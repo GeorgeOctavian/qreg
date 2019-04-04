@@ -3,3 +3,4 @@
 *.pyc
 qregpy.egg-info/
 dist/
+build/
