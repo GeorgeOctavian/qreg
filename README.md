@@ -1,6 +1,4 @@
 # QReg Repository
-==============================
-
 
 ## Overview
 
@@ -12,10 +10,10 @@ Current QReg support linear, polynomial, decision tree, xgboost, gboosting regre
 ## Dependencies
 Python 3.6 or higher, requires scipy, xgboost, numpy, scikit-learn
 
-####  How to install
+###  How to install
 ``pip install qregpy``
 
-####  How to use
+###  How to use
 ```
 from qregpy import qreg
 import pandas as pd
