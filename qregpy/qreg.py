@@ -1,7 +1,15 @@
 #!/usr/bin/env python
-"""Summary
-"""
 # coding=utf-8
+
+"""
+.. module:: qregpy
+    :platform: Linux, MacOs, Windows
+    :synopsis: QReg: Query-centric regression.
+ 
+.. moduleauthor:: Qingzhi Ma <q.ma.2@warwick.ac.uk>
+"""
+
+
 from __future__ import print_function, division
 import os, sys
 
@@ -18,26 +26,33 @@ from xgboost.sklearn import XGBClassifier as XGBClassifier_sklearn
 
 from sklearn.model_selection import train_test_split
 
+__docformat__ = 'reStructuredText'
 
 class QReg:
     """This is the implementation of query-centric regression, QReg.
     
-    Attributes:
-        base_models (list,optional): a list of regression model names, example ['linear', "xgboost"]
-        b_cross_validation (boolean): whether cross-validation is used to train the base models, including xgboost, gboost, etc.
-        n_jobs (int): the maximum cores to be used.
-        verbose (boolean): control the logging level
-        reg (QReg): the QReg regression model
+    :param base_models: a list of regression model names, example ['linear', "xgboost"]. Currently "linear", "polynomial", "decisiontree", "xgboost", "gboost" are supported.
+    :param b_cross_validation: whether cross-validation is used to train the base models, including xgboost, gboost, etc.
+    :param n_jobs: the maximum cores to be used.
+    :param verbose: control the logging level
+    :type base_models: List of Strings, (Optional)
+    :type b_cross_validation: Boolean, (Optional, default True)
+    :type n_jobs: int, (Optional, default 4)
+    :type verbose: boolean, (Optional, default True)
     """
 
     def __init__(self, base_models=['linear', "xgboost"], b_cross_validation=True, n_jobs=4, verbose=True):
-        """Summary
+        """ The constructor for QReg.
         
-        Args:
-            base_models (list, optional): a list of regression model names, example ['linear', "xgboost"]. Currently "linear", "polynomial", "decisiontree", "xgboost", "gboost" are supported.
-            b_cross_validation (bool, optional): whether cross-validation is used to train the base models, including xgboost, gboost, etc.
-            n_jobs (int, optional): the maximum cores to be used.
-            verbose (bool, optional): control the logging level
+        :param base_models: a list of regression model names, example ['linear', "xgboost"]. Currently "linear", "polynomial", "decisiontree", "xgboost", "gboost" are supported.
+        :param b_cross_validation: whether cross-validation is used to train the base models, including xgboost, gboost, etc.
+        :param n_jobs: the maximum cores to be used.
+        :param verbose: control the logging level
+        :type base_models: List of Strings, (Optional)
+        :type b_cross_validation: Boolean, (Optional, default True)
+        :type n_jobs: int, (Optional, default 4)
+        :type verbose: boolean, (Optional, default True)
+
         """
         self.base_models = base_models
         self.b_cross_validation = b_cross_validation
@@ -53,14 +68,37 @@ class QReg:
         self.classifier = None
 
     def fit(self, X, y):
-        """fit the QReg regression on the training data X andy.
-        
-        Args:
-            X (numpy.ndarray): the independent variables, like [[1,2],[2,4]]
-            y (numpy.ndarray): the dependent variables, like [4, 8]
-        
-        Returns:
-            QReg: the regression model
+        """fit the QReg regression on the training data X and y.
+
+        :param X: the independent variables, like [[1,2],[2,4]]
+        :param y: the dependent variables, like [4, 8]
+        :type X: numpy.ndarray
+        :type y: numpy.ndarray
+        :returns: the regression model
+        :rtype: QReg
+
+        :Example:
+
+        >>> from qregpy import qreg
+        >>> import pandas as pd
+        >>> 
+        >>> # load the files
+        >>> df = pd.read_csv("/data/10k.csv")
+        >>> headerX = ["ss_list_price", "ss_wholesale_cost"]
+        >>> headerY = "ss_wholesale_cost"
+        >>> 
+        >>> # prepare X and y
+        >>> X = df[headerX].values
+        >>> y = df[headerY].values
+        >>> 
+        >>> # train the regression using base models linear regression and XGBoost regression.
+        >>> reg = qreg.QReg(base_models=["linear","xgboost"], verbose=True).fit(X, y)
+        >>> 
+        >>> # make predictions
+        >>> reg.predict([[93.35, 53.04], [60.84, 41.96]])
+        [23.0, 11.1]
+
+        .. note:: fit() receives X and y
         """
         start = datetime.now()
 
@@ -90,13 +128,36 @@ class QReg:
         return self
 
     def predict(self, points):
-        """make a prediction for given points
-        Args:
-            points (numpy.ndarray):  points,  like [[1,2],[2,4]] to predict for point [1,2] and point [2,4]
-        
-        Returns:
-            list: list of predictions
-        """
+        """ Make a prediction for given points
+
+                :param points: like [[1,2],[2,4]],  to make predictions for point [1,2] and point [2,4]
+                :type points: numpy.ndarray
+                :returns: the predictions for points
+                :rtype: List of predictions
+
+                :Example:
+
+                >>> from qregpy import qreg
+                >>> import pandas as pd
+                >>> 
+                >>> # load the files
+                >>> df = pd.read_csv("/data/10k.csv")
+                >>> headerX = ["ss_list_price", "ss_wholesale_cost"]
+                >>> headerY = "ss_wholesale_cost"
+                >>> 
+                >>> # prepare X and y
+                >>> X = df[headerX].values
+                >>> y = df[headerY].values
+                >>> 
+                >>> # train the regression using base models linear regression and XGBoost regression.
+                >>> reg = qreg.QReg(base_models=["linear","xgboost"], verbose=True).fit(X, y)
+                >>> 
+                >>> # make predictions
+                >>> reg.predict([[93.35, 53.04], [60.84, 41.96]])
+                [23.0, 11.1]
+
+                .. note:: The input points should be numpy.ndarray
+                """
         if self.b_use_classifier:
             return [
                 self.model_catalog[self.model_catalog_names[self.classifier.predict(point)[0]]].predict([point]).flat[0]
@@ -106,13 +167,13 @@ class QReg:
 
     def deploy_sklearn_linear_regression(self, X, y):
         """ train the linear regression
-        
-        Args:
-            X (numpy.ndarray): the independent variables, like [[1,2],[2,4]]
-            y (numpy.ndarray): the dependent variables, like [4, 8]
-        
-        Returns:
-            TYPE:  the linear regression model
+
+        :param X: the independent variables, like [[1,2],[2,4]]
+        :param y: the dependent variables, like [4, 8]
+        :type X: numpy.ndarray
+        :type y: numpy.ndarray
+        :returns: the linear regression model
+        :rtype: LinearRegression
         """
         from sklearn import linear_model
         if self.verbose:
@@ -130,12 +191,12 @@ class QReg:
     def deploy_sklearn_polynomial_regression(self, X, y):
         """ Train the polynomial regression
         
-        Args:
-            X (numpy.ndarray): the independent variables, like [[1,2],[2,4]]
-            y (numpy.ndarray): the dependent variables, like [4, 8]
-        
-        Returns:
-            TYPE: the polynomial regression model
+        :param X: the independent variables, like [[1,2],[2,4]]
+        :param y: the dependent variables, like [4, 8]
+        :type X: numpy.ndarray
+        :type y: numpy.ndarray
+        :returns: the polynomial regression model
+        :rtype: an polynomial regression object
         """
         from sklearn.preprocessing import PolynomialFeatures
         from sklearn.linear_model import Ridge
@@ -156,12 +217,12 @@ class QReg:
     def deploy_model_sklearn_decision_tree_regression(self, X, y):
         """ train the decision tree regression
         
-        Args:
-            X (numpy.ndarray): the independent variables, like [[1,2],[2,4]]
-            y (numpy.ndarray): the dependent variables, like [4, 8]
-        
-        Returns:
-            TYPE: the decision tree regression model
+        :param X: the independent variables, like [[1,2],[2,4]]
+        :param y: the dependent variables, like [4, 8]
+        :type X: numpy.ndarray
+        :type y: numpy.ndarray
+        :returns: the decision tree regression model
+        :rtype: DecisionTreeRegressor
         """
         if self.verbose:
             print("Start training the decision tree regression...")
@@ -187,12 +248,12 @@ class QReg:
     def deploy_xgboost_regression(self, X, y):
         """ train the XGBoost regression
         
-        Args:
-            X (numpy.ndarray): the independent variables, like [[1,2],[2,4]]
-            y (numpy.ndarray): the dependent variables, like [4, 8]
-        
-        Returns:
-            TYPE: the XGBoost regression model
+        :param X: the independent variables, like [[1,2],[2,4]]
+        :param y: the dependent variables, like [4, 8]
+        :type X: numpy.ndarray
+        :type y: numpy.ndarray
+        :returns: the XGBoost regression model
+        :rtype: XGBRegressor
         """
         from xgboost import XGBRegressor
         if self.verbose:
@@ -218,12 +279,12 @@ class QReg:
     def deploy_sklearn_gradient_tree_boosting(self, X, y):
         """ train the gradient tree boosting regression
         
-        Args:
-            X (numpy.ndarray): the independent variables, like [[1,2],[2,4]]
-            y (numpy.ndarray): the dependent variables, like [4, 8]
-        
-        Returns:
-            TYPE: the gradient tree boosting regression model
+        :param X: the independent variables, like [[1,2],[2,4]]
+        :param y: the dependent variables, like [4, 8]
+        :type X: numpy.ndarray
+        :type y: numpy.ndarray
+        :returns: the gradient tree boosting regression model
+        :rtype: GradientBoostingRegressor
         """
         from sklearn.ensemble import GradientBoostingRegressor
         if self.verbose:
@@ -254,6 +315,13 @@ class QReg:
         return reg, time_train
 
     def deploy_models(self, X, y):
+        """ train the base regression models
+        
+        :param X: the independent variables, like [[1,2],[2,4]]
+        :param y: the dependent variables, like [4, 8]
+        :type X: numpy.ndarray
+        :type y: numpy.ndarray
+        """
         start = datetime.now()
         for model in self.base_models:
             if model == "linear":
@@ -279,6 +347,14 @@ class QReg:
             print("Time to train base regression models is {:8.3f} sec.".format(time_train))
 
     def build_classifier_xgboost(self, X, indexes):
+        """
+        Build the XGBoost classifier for QReg.
+
+        :param X: the independent variables, like [[1,2],[2,4]]
+        :param indexes: a list of index, showting the best base model
+        :type X: numpy.ndarray
+        :type indexes: List of int
+        """
         start = datetime.now()
 
         if self.b_cross_validation:
