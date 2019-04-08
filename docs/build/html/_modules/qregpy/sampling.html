@@ -1,0 +1,213 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>qregpy.sampling &#8212; qregpy 0.1 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for qregpy.sampling</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Python implementation for</span>
+<span class="sd">http://erikerlandson.github.io/blog/2015/11/20/very-fast-reservoir-sampling/</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">with_statement</span><span class="p">,</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="nb">range</span> <span class="o">=</span> <span class="n">xrange</span>
+<span class="k">except</span> <span class="ne">NameError</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+<span class="kn">from</span> <span class="nn">sys</span> <span class="k">import</span> <span class="n">stderr</span><span class="p">,</span> <span class="n">stdin</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="k">import</span> <span class="n">random</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="k">import</span> <span class="n">log</span>
+
+<span class="n">__docformat__</span> <span class="o">=</span> <span class="s1">&#39;reStructuredText&#39;</span>
+
+<div class="viewcode-block" id="build_reservoir"><a class="viewcode-back" href="../../qregpy.html#qregpy.sampling.build_reservoir">[docs]</a><span class="k">def</span> <span class="nf">build_reservoir</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s1">&#39;output.txt&#39;</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate the sample for QReg.</span>
+
+<span class="sd">    :param data: the original file.</span>
+<span class="sd">    :param R: the size of the sample to be generated.</span>
+<span class="sd">    :param output: the file where the sample will be stored.</span>
+<span class="sd">    :param threshold: the threshold</span>
+<span class="sd">    :param verbose: control the logging level</span>
+<span class="sd">    :param headers: to check whether the headers are provided in the original file.</span>
+<span class="sd">    :type data: Path</span>
+<span class="sd">    :type R: int</span>
+<span class="sd">    :type output: Path</span>
+<span class="sd">    :type verbose: bool</span>
+<span class="sd">    :type headers: List of Strings</span>
+
+<span class="sd">    :Example:</span>
+<span class="sd">    &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; input=&#39;../data/10k.csv&#39;   # original file, in csv format, with headers.</span>
+<span class="sd">    &gt;&gt;&gt; sample=&#39;../data/sample.csv&#39; # the file where the generated sample will be stored</span>
+<span class="sd">    &gt;&gt;&gt; n=1000  ##number of records in the sample</span>
+<span class="sd">    &gt;&gt;&gt;</span>
+<span class="sd">    &gt;&gt;&gt; # generate the sample</span>
+<span class="sd">    &gt;&gt;&gt; sampling.build_reservoir(&#39;../data/10k.csv&#39;,100,output=&#39;../data/sample.csv&#39;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">p</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">),</span> <span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">p</span><span class="p">(</span><span class="o">*</span><span class="n">_</span><span class="p">):</span>
+            <span class="k">pass</span>
+
+    <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">threshold</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">R</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">data</span><span class="p">,</span><span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">input_file</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">headers</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">headers_input</span><span class="o">=</span><span class="n">input_file</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+            <span class="c1"># next(input_file)</span>
+            <span class="n">iterator</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">input_file</span><span class="p">)</span>
+            <span class="c1"># iterator = iter(data)</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">item</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">iterator</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">R</span><span class="p">:</span>
+                    <span class="n">p</span><span class="p">(</span><span class="s1">&#39;&gt; Adding element nb </span><span class="si">{0}</span><span class="s1">: </span><span class="si">{1!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">),</span> <span class="n">item</span><span class="p">)</span>
+                    <span class="n">res</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+                <span class="k">elif</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
+                    <span class="n">k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">random</span><span class="p">()</span> <span class="o">*</span> <span class="n">j</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">k</span> <span class="o">&lt;</span> <span class="n">R</span><span class="p">:</span>
+                        <span class="n">p</span><span class="p">(</span><span class="s1">&#39;&gt; [p=</span><span class="si">{0}</span><span class="s1">/</span><span class="si">{1:&gt;9}</span><span class="s1">] Swap element nb </span><span class="si">{2:&gt;5}</span><span class="s1">: </span><span class="si">{3!r}</span><span class="s1"> replaces </span><span class="si">{4!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">res</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+                        <span class="n">res</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">gap</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">log</span><span class="p">(</span><span class="n">random</span><span class="p">())</span> <span class="o">/</span> <span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">R</span> <span class="o">/</span> <span class="n">j</span><span class="p">))</span>
+                    <span class="n">j</span> <span class="o">+=</span> <span class="n">gap</span>
+                    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">gap</span><span class="p">):</span>
+                        <span class="n">item</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">iterator</span><span class="p">)</span>
+                    <span class="n">k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">random</span><span class="p">()</span> <span class="o">*</span> <span class="n">R</span><span class="p">)</span>
+                    <span class="n">p</span><span class="p">(</span><span class="s1">&#39;&gt; After skipping </span><span class="si">{0:&gt;9}</span><span class="s1"> lines, swap element nb </span><span class="si">{1:&gt;5}</span><span class="s1">: </span><span class="si">{2!r}</span><span class="s1"> replaces </span><span class="si">{3!r}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">gap</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">res</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+                    <span class="n">res</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span>
+
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">! User interrupted the process, stopping now</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">file</span><span class="o">=</span><span class="n">stderr</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">output</span><span class="p">,</span><span class="s1">&#39;w+&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">headers</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">headers_input</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">res</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">res</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="c1"># import argparse</span>
+    <span class="c1"># parser = argparse.ArgumentParser()</span>
+
+    <span class="c1"># parser.add_argument(&#39;size&#39;, help=&quot;Reservoir size&quot;, type=int)</span>
+    <span class="c1"># parser.add_argument(&#39;-t&#39;, &#39;--threshold&#39;,</span>
+    <span class="c1">#                     help=(&#39;threshold to start using gaps, default &#39;</span>
+    <span class="c1">#                           &#39; is 4 times the reservoir size&#39;),</span>
+    <span class="c1">#                     type=int)</span>
+    <span class="c1"># parser.add_argument(&#39;-v&#39;, &#39;--verbose&#39;, action=&#39;store_true&#39;)</span>
+    <span class="c1"># args = parser.parse_args()</span>
+
+    <span class="c1"># for row in build_reservoir(stdin,</span>
+    <span class="c1">#                            R=args.size,</span>
+    <span class="c1">#                            threshold=args.threshold,</span>
+    <span class="c1">#                            verbose=args.verbose):</span>
+    <span class="c1">#     print(row, end=&quot;&quot;)</span>
+    <span class="n">build_reservoir</span><span class="p">(</span><span class="s1">&#39;../data/10k.csv&#39;</span><span class="p">,</span><span class="mi">100</span><span class="p">,</span><span class="n">output</span><span class="o">=</span><span class="s1">&#39;../data/sample.csv&#39;</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">qregpy</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Qingzhi Ma.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

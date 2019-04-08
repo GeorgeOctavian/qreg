@@ -33,7 +33,6 @@ release = '0.1'
 # ones.
 extensions = [
 'sphinx.ext.autodoc','sphinx.ext.todo', 'sphinx.ext.viewcode',
-'rinoh.frontend.sphinx'
 ]
 
 # Add any paths that contain templates here, relative to this directory.

@@ -11,10 +11,10 @@ with open('LICENSE') as f:
 
 setup(
     name='qregpy',
-    version='1.1',
+    version='1.1.1',
     description='Query-centric regression model.',
     classifiers=[
-        'Development Status :: 1.0',
+        'Development Status :: 1.1',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.6',
         'Topic :: Approximate Query Processing :: Regression :: ensemble method',

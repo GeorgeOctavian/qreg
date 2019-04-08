@@ -1,1 +1,1 @@
-from . import qreg
+from . import qreg, sampling

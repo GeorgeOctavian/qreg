@@ -12,6 +12,14 @@ qregpy.qreg module
     :undoc-members:
     :show-inheritance:
 
+qregpy.sampling module
+----------------------
+
+.. automodule:: qregpy.sampling
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------

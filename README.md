@@ -34,7 +34,7 @@ from qregpy import qreg
 import pandas as pd
 
 # load the files
-df = pd.read_csv("/data/10k.csv")
+df = pd.read_csv("../data/10k.csv")
 headerX = ["ss_list_price", "ss_wholesale_cost"]
 headerY = "ss_wholesale_cost"
 
@@ -48,4 +48,38 @@ reg = qreg.QReg(base_models=["linear","xgboost"], verbose=True).fit(X, y)
 # make predictions
 reg.predict([[93.35, 53.04], [60.84, 41.96]])
 ```
+
+
+### Example III (Generate Samples First)
+
+```
+from qregpy import qreg, sampling
+import pandas as pd
+
+input='../data/10k.csv'   # original file, in csv format, with headers.
+sample='../data/sample.csv' # the file where the generated sample will be stored
+n=1000  ##number of records in the sample
+
+# generate the sample
+sampling.build_reservoir('../data/10k.csv',100,output='../data/sample.csv')
+
+# read the data
+# load the files
+df = pd.read_csv(sample)
+headerX = ["ss_list_price", "ss_wholesale_cost"]
+headerY = "ss_wholesale_cost"
+
+# prepare X and y
+X = df[headerX].values
+y = df[headerY].values
+
+# train the regression using base models linear regression and XGBoost regression.
+reg = qreg.QReg(base_models=["linear","xgboost"], verbose=True).fit(X, y)
+
+# make predictions
+reg.predict([[93.35, 53.04], [60.84, 41.96]])
+
+```
+
+
 ---------------
