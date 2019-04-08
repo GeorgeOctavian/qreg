@@ -102,6 +102,11 @@ class QReg:
         """
         start = datetime.now()
 
+        if len(y) < 9:
+            print("The minimum number of points supported by QReg is 9!!")
+            print("Program terminates...")
+            exit(1)
+
         seed = 7
         test_size = 0.5
         Xreg, Xcls, yreg, ycls = train_test_split(X, y, test_size=test_size, random_state=seed)
@@ -361,6 +366,8 @@ class QReg:
             parameters = {'max_depth': [1, 4, 8, 12]}
             clf = GridSearchCV(XGBClassifier_sklearn(),
                                parameters, n_jobs=self.n_jobs, cv=3)
+            print(X)
+            print(indexes)
             clf.fit(X, indexes)
             classifier = clf.best_estimator_
         else:
@@ -375,14 +382,28 @@ class QReg:
 
 
 if __name__ == "__main__":
-    import pandas as pd
-    df = pd.read_csv("/data/dbest/data/10k.csv")
-    headerX = ["ss_list_price", "ss_wholesale_cost"]
-    headerY = "ss_wholesale_cost"
 
-    X = df[headerX].values
-    y = df[headerY].values
+    # example 1
+    # import pandas as pd
+    # df = pd.read_csv("/data/dbest/data/10k.csv")
+    # headerX = ["ss_list_price", "ss_wholesale_cost"]
+    # headerY = "ss_wholesale_cost"
+    #
+    # X = df[headerX].values
+    # y = df[headerY].values
+    #
+    # reg = QReg(base_models=["linear", "polynomial", "decisiontree", "xgboost", "gboost"], verbose=True).fit(X, y)
+    # # print(reg.predict([[93.35], [60.84]]))
+    # print(reg.predict([[93.35, 53.04], [60.84, 41.96]]))
 
-    reg = QReg(base_models=["linear", "polynomial", "decisiontree", "xgboost", "gboost"], verbose=True).fit(X, y)
-    # print(reg.predict([[93.35], [60.84]]))
-    print(reg.predict([[93.35, 53.04], [60.84, 41.96]]))
+    # example 2
+    import numpy as np
+    # The target fitting function is y=x1+2x2
+    X = np.array([[1,2],[2,5],[3,7],[4,9],[1,3],[2,4], [3,5], [4,2], [5,1]])
+    y= np.array([5.2, 12, 17.5, 21.2,7.2, 11,13, 7.8, 6.9])
+    print(X)
+    print(y)
+
+    reg = QReg(base_models=["linear", "polynomial"], verbose=True).fit(X, y)
+
+    print(reg.predict([[3,4]]))
