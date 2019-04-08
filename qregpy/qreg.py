@@ -366,8 +366,6 @@ class QReg:
             parameters = {'max_depth': [1, 4, 8, 12]}
             clf = GridSearchCV(XGBClassifier_sklearn(),
                                parameters, n_jobs=self.n_jobs, cv=3)
-            print(X)
-            print(indexes)
             clf.fit(X, indexes)
             classifier = clf.best_estimator_
         else:
@@ -401,8 +399,6 @@ if __name__ == "__main__":
     # The target fitting function is y=x1+2x2
     X = np.array([[1,2],[2,5],[3,7],[4,9],[1,3],[2,4], [3,5], [4,2], [5,1]])
     y= np.array([5.2, 12, 17.5, 21.2,7.2, 11,13, 7.8, 6.9])
-    print(X)
-    print(y)
 
     reg = QReg(base_models=["linear", "polynomial"], verbose=True).fit(X, y)
 
