@@ -1,0 +1,502 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>qregpy.qreg &#8212; qregpy 0.1 documentation</title>
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for qregpy.qreg</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python</span>
+<span class="c1"># coding=utf-8</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">.. module:: qregpy</span>
+<span class="sd">    :platform: Linux, MacOs, Windows</span>
+<span class="sd">    :synopsis: QReg: Query-centric regression.</span>
+<span class="sd"> </span>
+<span class="sd">.. moduleauthor:: Qingzhi Ma &lt;q.ma.2@warwick.ac.uk&gt;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">sys</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)))</span>
+
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span>
+
+
+<span class="kn">from</span> <span class="nn">sklearn.tree</span> <span class="k">import</span> <span class="n">DecisionTreeRegressor</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="k">import</span> <span class="n">GridSearchCV</span>
+<span class="kn">from</span> <span class="nn">xgboost</span> <span class="k">import</span> <span class="n">XGBRegressor</span>
+<span class="kn">from</span> <span class="nn">xgboost.sklearn</span> <span class="k">import</span> <span class="n">XGBRegressor</span> <span class="k">as</span> <span class="n">XGBRegressor_sklearn</span>
+<span class="kn">from</span> <span class="nn">xgboost.sklearn</span> <span class="k">import</span> <span class="n">XGBClassifier</span> <span class="k">as</span> <span class="n">XGBClassifier_sklearn</span>
+
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="k">import</span> <span class="n">train_test_split</span>
+
+<span class="n">__docformat__</span> <span class="o">=</span> <span class="s1">&#39;reStructuredText&#39;</span>
+
+<div class="viewcode-block" id="QReg"><a class="viewcode-back" href="../../qregpy.html#qregpy.qreg.QReg">[docs]</a><span class="k">class</span> <span class="nc">QReg</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;This is the implementation of query-centric regression, QReg.</span>
+<span class="sd">    </span>
+<span class="sd">    :param base_models: a list of regression model names, example [&#39;linear&#39;, &quot;xgboost&quot;]. Currently &quot;linear&quot;, &quot;polynomial&quot;, &quot;decisiontree&quot;, &quot;xgboost&quot;, &quot;gboost&quot; are supported.</span>
+<span class="sd">    :param b_cross_validation: whether cross-validation is used to train the base models, including xgboost, gboost, etc.</span>
+<span class="sd">    :param n_jobs: the maximum cores to be used.</span>
+<span class="sd">    :param verbose: control the logging level</span>
+<span class="sd">    :type base_models: List of Strings, (Optional)</span>
+<span class="sd">    :type b_cross_validation: Boolean, (Optional, default True)</span>
+<span class="sd">    :type n_jobs: int, (Optional, default 4)</span>
+<span class="sd">    :type verbose: boolean, (Optional, default True)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_models</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="s2">&quot;xgboost&quot;</span><span class="p">],</span> <span class="n">b_cross_validation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; The constructor for QReg.</span>
+<span class="sd">        </span>
+<span class="sd">        :param base_models: a list of regression model names, example [&#39;linear&#39;, &quot;xgboost&quot;]. Currently &quot;linear&quot;, &quot;polynomial&quot;, &quot;decisiontree&quot;, &quot;xgboost&quot;, &quot;gboost&quot; are supported.</span>
+<span class="sd">        :param b_cross_validation: whether cross-validation is used to train the base models, including xgboost, gboost, etc.</span>
+<span class="sd">        :param n_jobs: the maximum cores to be used.</span>
+<span class="sd">        :param verbose: control the logging level</span>
+<span class="sd">        :type base_models: List of Strings, (Optional)</span>
+<span class="sd">        :type b_cross_validation: Boolean, (Optional, default True)</span>
+<span class="sd">        :type n_jobs: int, (Optional, default 4)</span>
+<span class="sd">        :type verbose: boolean, (Optional, default True)</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base_models</span> <span class="o">=</span> <span class="n">base_models</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">b_cross_validation</span> <span class="o">=</span> <span class="n">b_cross_validation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span> <span class="o">=</span> <span class="n">n_jobs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reg</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">base_models</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">b_use_classifier</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">b_use_classifier</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_catalog</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_catalog_names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="QReg.fit"><a class="viewcode-back" href="../../qregpy.html#qregpy.qreg.QReg.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;fit the QReg regression on the training data X and y.</span>
+
+<span class="sd">        :param X: the independent variables, like [[1,2],[2,4]]</span>
+<span class="sd">        :param y: the dependent variables, like [4, 8]</span>
+<span class="sd">        :type X: numpy.ndarray</span>
+<span class="sd">        :type y: numpy.ndarray</span>
+<span class="sd">        :returns: the regression model</span>
+<span class="sd">        :rtype: QReg</span>
+
+<span class="sd">        :Example:</span>
+
+<span class="sd">        &gt;&gt;&gt; from qregpy import qreg</span>
+<span class="sd">        &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">        &gt;&gt;&gt; </span>
+<span class="sd">        &gt;&gt;&gt; # load the files</span>
+<span class="sd">        &gt;&gt;&gt; df = pd.read_csv(&quot;/data/10k.csv&quot;)</span>
+<span class="sd">        &gt;&gt;&gt; headerX = [&quot;ss_list_price&quot;, &quot;ss_wholesale_cost&quot;]</span>
+<span class="sd">        &gt;&gt;&gt; headerY = &quot;ss_wholesale_cost&quot;</span>
+<span class="sd">        &gt;&gt;&gt; </span>
+<span class="sd">        &gt;&gt;&gt; # prepare X and y</span>
+<span class="sd">        &gt;&gt;&gt; X = df[headerX].values</span>
+<span class="sd">        &gt;&gt;&gt; y = df[headerY].values</span>
+<span class="sd">        &gt;&gt;&gt; </span>
+<span class="sd">        &gt;&gt;&gt; # train the regression using base models linear regression and XGBoost regression.</span>
+<span class="sd">        &gt;&gt;&gt; reg = qreg.QReg(base_models=[&quot;linear&quot;,&quot;xgboost&quot;], verbose=True).fit(X, y)</span>
+<span class="sd">        &gt;&gt;&gt; </span>
+<span class="sd">        &gt;&gt;&gt; # make predictions</span>
+<span class="sd">        &gt;&gt;&gt; reg.predict([[93.35, 53.04], [60.84, 41.96]])</span>
+<span class="sd">        [23.0, 11.1]</span>
+
+<span class="sd">        .. note:: fit() receives X and y</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">9</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;The minimum number of points supported by QReg is 9!!&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Program terminates...&quot;</span><span class="p">)</span>
+            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">seed</span> <span class="o">=</span> <span class="mi">7</span>
+        <span class="n">test_size</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="n">Xreg</span><span class="p">,</span> <span class="n">Xcls</span><span class="p">,</span> <span class="n">yreg</span><span class="p">,</span> <span class="n">ycls</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="n">test_size</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">deploy_models</span><span class="p">(</span><span class="n">Xreg</span><span class="p">,</span> <span class="n">yreg</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_use_classifier</span><span class="p">:</span>
+            <span class="n">predictions</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_catalog</span><span class="p">:</span>
+                <span class="n">predictions</span><span class="p">[</span><span class="n">model</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_catalog</span><span class="p">[</span><span class="n">model</span><span class="p">]</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">Xcls</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="n">predictions_list</span> <span class="o">=</span> <span class="p">[[</span><span class="n">predictions</span><span class="p">[</span><span class="n">model</span><span class="p">][</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_catalog</span><span class="p">]</span> <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span>
+                                <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ycls</span><span class="p">))]</span>
+            <span class="n">predictions_min</span> <span class="o">=</span> <span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="k">for</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">predictions_list</span><span class="p">]</span>
+            <span class="n">errors</span> <span class="o">=</span> <span class="p">[[(</span><span class="n">predictions</span><span class="p">[</span><span class="n">model</span><span class="p">][</span><span class="n">index</span><span class="p">]</span> <span class="o">-</span> <span class="n">predictions_min</span><span class="p">[</span><span class="n">index</span><span class="p">])</span> <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_catalog</span><span class="p">]</span> <span class="k">for</span> <span class="n">index</span>
+                      <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ycls</span><span class="p">))]</span>
+            <span class="n">best_model_index</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">errors</span><span class="p">]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">build_classifier_xgboost</span><span class="p">(</span><span class="n">Xcls</span><span class="p">,</span> <span class="n">best_model_index</span><span class="p">)</span>
+
+        <span class="n">end</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">time_train</span> <span class="o">=</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finish training QReg, time cost is </span><span class="si">{:8.3f}</span><span class="s2"> sec&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time_train</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;------------------------------------------------------------------&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+<div class="viewcode-block" id="QReg.predict"><a class="viewcode-back" href="../../qregpy.html#qregpy.qreg.QReg.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Make a prediction for given points</span>
+
+<span class="sd">                :param points: like [[1,2],[2,4]],  to make predictions for point [1,2] and point [2,4]</span>
+<span class="sd">                :type points: numpy.ndarray</span>
+<span class="sd">                :returns: the predictions for points</span>
+<span class="sd">                :rtype: List of predictions</span>
+
+<span class="sd">                :Example:</span>
+
+<span class="sd">                &gt;&gt;&gt; from qregpy import qreg</span>
+<span class="sd">                &gt;&gt;&gt; import pandas as pd</span>
+<span class="sd">                &gt;&gt;&gt; </span>
+<span class="sd">                &gt;&gt;&gt; # load the files</span>
+<span class="sd">                &gt;&gt;&gt; df = pd.read_csv(&quot;/data/10k.csv&quot;)</span>
+<span class="sd">                &gt;&gt;&gt; headerX = [&quot;ss_list_price&quot;, &quot;ss_wholesale_cost&quot;]</span>
+<span class="sd">                &gt;&gt;&gt; headerY = &quot;ss_wholesale_cost&quot;</span>
+<span class="sd">                &gt;&gt;&gt; </span>
+<span class="sd">                &gt;&gt;&gt; # prepare X and y</span>
+<span class="sd">                &gt;&gt;&gt; X = df[headerX].values</span>
+<span class="sd">                &gt;&gt;&gt; y = df[headerY].values</span>
+<span class="sd">                &gt;&gt;&gt; </span>
+<span class="sd">                &gt;&gt;&gt; # train the regression using base models linear regression and XGBoost regression.</span>
+<span class="sd">                &gt;&gt;&gt; reg = qreg.QReg(base_models=[&quot;linear&quot;,&quot;xgboost&quot;], verbose=True).fit(X, y)</span>
+<span class="sd">                &gt;&gt;&gt; </span>
+<span class="sd">                &gt;&gt;&gt; # make predictions</span>
+<span class="sd">                &gt;&gt;&gt; reg.predict([[93.35, 53.04], [60.84, 41.96]])</span>
+<span class="sd">                [23.0, 11.1]</span>
+
+<span class="sd">                .. note:: The input points should be numpy.ndarray</span>
+<span class="sd">                &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_use_classifier</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model_catalog</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">model_catalog_names</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">classifier</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">point</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]]</span><span class="o">.</span><span class="n">predict</span><span class="p">([</span><span class="n">point</span><span class="p">])</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">points</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_catalog</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">model_catalog_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">points</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="QReg.deploy_sklearn_linear_regression"><a class="viewcode-back" href="../../qregpy.html#qregpy.qreg.QReg.deploy_sklearn_linear_regression">[docs]</a>    <span class="k">def</span> <span class="nf">deploy_sklearn_linear_regression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; train the linear regression</span>
+
+<span class="sd">        :param X: the independent variables, like [[1,2],[2,4]]</span>
+<span class="sd">        :param y: the dependent variables, like [4, 8]</span>
+<span class="sd">        :type X: numpy.ndarray</span>
+<span class="sd">        :type y: numpy.ndarray</span>
+<span class="sd">        :returns: the linear regression model</span>
+<span class="sd">        :rtype: LinearRegression</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">sklearn</span> <span class="k">import</span> <span class="n">linear_model</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Start training the linear regression...&quot;</span><span class="p">)</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">reg</span> <span class="o">=</span> <span class="n">linear_model</span><span class="o">.</span><span class="n">LinearRegression</span><span class="p">()</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">time_train</span> <span class="o">=</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finish training the linear regression (time cost is </span><span class="si">{:6.3f}</span><span class="s2"> sec.)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time_train</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">reg</span><span class="p">,</span> <span class="n">time_train</span></div>
+
+<div class="viewcode-block" id="QReg.deploy_sklearn_polynomial_regression"><a class="viewcode-back" href="../../qregpy.html#qregpy.qreg.QReg.deploy_sklearn_polynomial_regression">[docs]</a>    <span class="k">def</span> <span class="nf">deploy_sklearn_polynomial_regression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Train the polynomial regression</span>
+<span class="sd">        </span>
+<span class="sd">        :param X: the independent variables, like [[1,2],[2,4]]</span>
+<span class="sd">        :param y: the dependent variables, like [4, 8]</span>
+<span class="sd">        :type X: numpy.ndarray</span>
+<span class="sd">        :type y: numpy.ndarray</span>
+<span class="sd">        :returns: the polynomial regression model</span>
+<span class="sd">        :rtype: an polynomial regression object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="k">import</span> <span class="n">PolynomialFeatures</span>
+        <span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="k">import</span> <span class="n">Ridge</span>
+        <span class="kn">from</span> <span class="nn">sklearn.pipeline</span> <span class="k">import</span> <span class="n">make_pipeline</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Start training the polynomial regression...&quot;</span><span class="p">)</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">reg</span> <span class="o">=</span> <span class="n">make_pipeline</span><span class="p">(</span><span class="n">PolynomialFeatures</span><span class="p">(</span><span class="mi">5</span><span class="p">),</span> <span class="n">Ridge</span><span class="p">())</span>
+        <span class="n">reg</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="n">end</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">time_train</span> <span class="o">=</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finish training the polynomial regression (time cost is </span><span class="si">{:6.3f}</span><span class="s2"> sec.)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time_train</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">reg</span><span class="p">,</span> <span class="n">time_train</span></div>
+
+<div class="viewcode-block" id="QReg.deploy_model_sklearn_decision_tree_regression"><a class="viewcode-back" href="../../qregpy.html#qregpy.qreg.QReg.deploy_model_sklearn_decision_tree_regression">[docs]</a>    <span class="k">def</span> <span class="nf">deploy_model_sklearn_decision_tree_regression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; train the decision tree regression</span>
+<span class="sd">        </span>
+<span class="sd">        :param X: the independent variables, like [[1,2],[2,4]]</span>
+<span class="sd">        :param y: the dependent variables, like [4, 8]</span>
+<span class="sd">        :type X: numpy.ndarray</span>
+<span class="sd">        :type y: numpy.ndarray</span>
+<span class="sd">        :returns: the decision tree regression model</span>
+<span class="sd">        :rtype: DecisionTreeRegressor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Start training the decision tree regression...&quot;</span><span class="p">)</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_cross_validation</span><span class="p">:</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;max_depth&#39;</span><span class="p">:</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">20</span><span class="p">)}</span>
+            <span class="n">clf</span> <span class="o">=</span> <span class="n">GridSearchCV</span><span class="p">(</span><span class="n">DecisionTreeRegressor</span><span class="p">(),</span>
+                               <span class="n">parameters</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">clf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+            <span class="n">reg</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">best_estimator_</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">reg</span> <span class="o">=</span> <span class="n">DecisionTreeRegressor</span><span class="p">(</span><span class="n">max_depth</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+            <span class="n">reg</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+        <span class="n">end</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">time_train</span> <span class="o">=</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finish training the decision tree regression (time cost is </span><span class="si">{:6.3f}</span><span class="s2"> sec.)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time_train</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">reg</span><span class="p">,</span> <span class="n">time_train</span></div>
+
+<div class="viewcode-block" id="QReg.deploy_xgboost_regression"><a class="viewcode-back" href="../../qregpy.html#qregpy.qreg.QReg.deploy_xgboost_regression">[docs]</a>    <span class="k">def</span> <span class="nf">deploy_xgboost_regression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; train the XGBoost regression</span>
+<span class="sd">        </span>
+<span class="sd">        :param X: the independent variables, like [[1,2],[2,4]]</span>
+<span class="sd">        :param y: the dependent variables, like [4, 8]</span>
+<span class="sd">        :type X: numpy.ndarray</span>
+<span class="sd">        :type y: numpy.ndarray</span>
+<span class="sd">        :returns: the XGBoost regression model</span>
+<span class="sd">        :rtype: XGBRegressor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">xgboost</span> <span class="k">import</span> <span class="n">XGBRegressor</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Start training the xgboost regression...&quot;</span><span class="p">)</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_cross_validation</span><span class="p">:</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;max_depth&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">12</span><span class="p">]}</span>
+            <span class="n">clf</span> <span class="o">=</span> <span class="n">GridSearchCV</span><span class="p">(</span><span class="n">XGBRegressor_sklearn</span><span class="p">(),</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">clf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+            <span class="n">reg</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">best_estimator_</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">reg</span> <span class="o">=</span> <span class="n">XGBRegressor</span><span class="p">(</span><span class="n">max_depth</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+            <span class="n">reg</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+        <span class="n">end</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">time_train</span> <span class="o">=</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finish training the xgboost regression (time cost is </span><span class="si">{:6.3f}</span><span class="s2"> sec.)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time_train</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">reg</span><span class="p">,</span> <span class="n">time_train</span></div>
+
+<div class="viewcode-block" id="QReg.deploy_sklearn_gradient_tree_boosting"><a class="viewcode-back" href="../../qregpy.html#qregpy.qreg.QReg.deploy_sklearn_gradient_tree_boosting">[docs]</a>    <span class="k">def</span> <span class="nf">deploy_sklearn_gradient_tree_boosting</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; train the gradient tree boosting regression</span>
+<span class="sd">        </span>
+<span class="sd">        :param X: the independent variables, like [[1,2],[2,4]]</span>
+<span class="sd">        :param y: the dependent variables, like [4, 8]</span>
+<span class="sd">        :type X: numpy.ndarray</span>
+<span class="sd">        :type y: numpy.ndarray</span>
+<span class="sd">        :returns: the gradient tree boosting regression model</span>
+<span class="sd">        :rtype: GradientBoostingRegressor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="k">import</span> <span class="n">GradientBoostingRegressor</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Start training the gradient boosting regression...&quot;</span><span class="p">)</span>
+
+        <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_cross_validation</span><span class="p">:</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;max_depth&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="s1">&#39;loss&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;ls&#39;</span><span class="p">],</span>
+                          <span class="s1">&#39;n_estimators&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">100</span><span class="p">],</span> <span class="s1">&#39;learning_rate&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">],</span>
+                          <span class="c1"># &#39;min_impurity_split&#39;: [1e-1],</span>
+                          <span class="s1">&#39;learning_rate&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1e-1</span><span class="p">],</span>
+                          <span class="s1">&#39;min_samples_split&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">7</span><span class="p">],</span> <span class="s1">&#39;verbose&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                          <span class="s1">&#39;min_samples_leaf&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;subsample&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">]}</span>
+            <span class="n">clf</span> <span class="o">=</span> <span class="n">GridSearchCV</span><span class="p">(</span>
+                <span class="n">GradientBoostingRegressor</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">clf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+            <span class="n">reg</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">best_estimator_</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">reg</span> <span class="o">=</span> <span class="n">GradientBoostingRegressor</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                            <span class="n">n_estimators</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">learning_rate</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">max_depth</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s1">&#39;ls&#39;</span><span class="p">)</span>
+            <span class="n">reg</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+        <span class="n">end</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="n">time_train</span> <span class="o">=</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finish training the gradient boosting regression (time cost is </span><span class="si">{:6.3f}</span><span class="s2"> sec.)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time_train</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">reg</span><span class="p">,</span> <span class="n">time_train</span></div>
+
+<div class="viewcode-block" id="QReg.deploy_models"><a class="viewcode-back" href="../../qregpy.html#qregpy.qreg.QReg.deploy_models">[docs]</a>    <span class="k">def</span> <span class="nf">deploy_models</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; train the base regression models</span>
+<span class="sd">        </span>
+<span class="sd">        :param X: the independent variables, like [[1,2],[2,4]]</span>
+<span class="sd">        :param y: the dependent variables, like [4, 8]</span>
+<span class="sd">        :type X: numpy.ndarray</span>
+<span class="sd">        :type y: numpy.ndarray</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_models</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;linear&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model_catalog</span><span class="p">[</span><span class="n">model</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deploy_sklearn_linear_regression</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;xgboost&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model_catalog</span><span class="p">[</span><span class="n">model</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deploy_xgboost_regression</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;gboost&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model_catalog</span><span class="p">[</span><span class="n">model</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deploy_sklearn_gradient_tree_boosting</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;polynomial&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model_catalog</span><span class="p">[</span><span class="n">model</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deploy_sklearn_polynomial_regression</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">model</span> <span class="o">==</span> <span class="s2">&quot;decisiontree&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model_catalog</span><span class="p">[</span><span class="n">model</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">deploy_model_sklearn_decision_tree_regression</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">model</span> <span class="o">+</span> <span class="s2">&quot; is not supported! please check!&quot;</span><span class="p">)</span>
+                <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_catalog_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_catalog</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+            <span class="n">time_train</span> <span class="o">=</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finish training the base models: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_catalog</span><span class="o">.</span><span class="n">keys</span><span class="p">())))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Time to train base regression models is </span><span class="si">{:8.3f}</span><span class="s2"> sec.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time_train</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="QReg.build_classifier_xgboost"><a class="viewcode-back" href="../../qregpy.html#qregpy.qreg.QReg.build_classifier_xgboost">[docs]</a>    <span class="k">def</span> <span class="nf">build_classifier_xgboost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">indexes</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Build the XGBoost classifier for QReg.</span>
+
+<span class="sd">        :param X: the independent variables, like [[1,2],[2,4]]</span>
+<span class="sd">        :param indexes: a list of index, showting the best base model</span>
+<span class="sd">        :type X: numpy.ndarray</span>
+<span class="sd">        :type indexes: List of int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_cross_validation</span><span class="p">:</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;max_depth&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">12</span><span class="p">]}</span>
+            <span class="n">clf</span> <span class="o">=</span> <span class="n">GridSearchCV</span><span class="p">(</span><span class="n">XGBClassifier_sklearn</span><span class="p">(),</span>
+                               <span class="n">parameters</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_jobs</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">clf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">indexes</span><span class="p">)</span>
+            <span class="n">classifier</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">best_estimator_</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">classifier</span> <span class="o">=</span> <span class="n">XGBRegressor</span><span class="p">(</span><span class="n">max_depth</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+            <span class="n">classifier</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">indexes</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+            <span class="n">time_train</span> <span class="o">=</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Time to train the XGBoost classifier is </span><span class="si">{:8.3f}</span><span class="s2"> sec.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time_train</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">classifier</span> <span class="o">=</span> <span class="n">classifier</span></div></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+
+    <span class="c1"># example 1</span>
+    <span class="c1"># import pandas as pd</span>
+    <span class="c1"># df = pd.read_csv(&quot;/data/dbest/data/10k.csv&quot;)</span>
+    <span class="c1"># headerX = [&quot;ss_list_price&quot;, &quot;ss_wholesale_cost&quot;]</span>
+    <span class="c1"># headerY = &quot;ss_wholesale_cost&quot;</span>
+    <span class="c1">#</span>
+    <span class="c1"># X = df[headerX].values</span>
+    <span class="c1"># y = df[headerY].values</span>
+    <span class="c1">#</span>
+    <span class="c1"># reg = QReg(base_models=[&quot;linear&quot;, &quot;polynomial&quot;, &quot;decisiontree&quot;, &quot;xgboost&quot;, &quot;gboost&quot;], verbose=True).fit(X, y)</span>
+    <span class="c1"># # print(reg.predict([[93.35], [60.84]]))</span>
+    <span class="c1"># print(reg.predict([[93.35, 53.04], [60.84, 41.96]]))</span>
+
+    <span class="c1"># example 2</span>
+    <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+    <span class="c1"># The target fitting function is y=x1+2x2</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">5</span><span class="p">],[</span><span class="mi">3</span><span class="p">,</span><span class="mi">7</span><span class="p">],[</span><span class="mi">4</span><span class="p">,</span><span class="mi">9</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span><span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">],</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="mi">1</span><span class="p">]])</span>
+    <span class="n">y</span><span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">5.2</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mf">17.5</span><span class="p">,</span> <span class="mf">21.2</span><span class="p">,</span><span class="mf">7.2</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span><span class="mi">13</span><span class="p">,</span> <span class="mf">7.8</span><span class="p">,</span> <span class="mf">6.9</span><span class="p">])</span>
+
+    <span class="n">reg</span> <span class="o">=</span> <span class="n">QReg</span><span class="p">(</span><span class="n">base_models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="s2">&quot;polynomial&quot;</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">reg</span><span class="o">.</span><span class="n">predict</span><span class="p">([[</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]]))</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">qregpy</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Qingzhi Ma.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

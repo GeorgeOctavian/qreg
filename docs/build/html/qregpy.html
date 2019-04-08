@@ -1,0 +1,342 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>qregpy package &#8212; qregpy 0.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="qregpy-package">
+<h1>qregpy package<a class="headerlink" href="#qregpy-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-qregpy.qreg">
+<span id="qregpy-qreg-module"></span><h2>qregpy.qreg module<a class="headerlink" href="#module-qregpy.qreg" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="module-qregpy"></span><dl class="class">
+<dt id="qregpy.qreg.QReg">
+<em class="property">class </em><code class="descclassname">qregpy.qreg.</code><code class="descname">QReg</code><span class="sig-paren">(</span><em>base_models=['linear', 'xgboost'], b_cross_validation=True, n_jobs=4, verbose=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qregpy/qreg.html#QReg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qregpy.qreg.QReg" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is the implementation of query-centric regression, QReg.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>base_models</strong> (<em>List of Strings</em><em>, </em><em>(</em><em>Optional</em><em>)</em>) – a list of regression model names, example [‘linear’, “xgboost”]. Currently “linear”, “polynomial”, “decisiontree”, “xgboost”, “gboost” are supported.</p></li>
+<li><p><strong>b_cross_validation</strong> (<em>Boolean</em><em>, </em><em>(</em><em>Optional</em><em>, </em><em>default True</em><em>)</em>) – whether cross-validation is used to train the base models, including xgboost, gboost, etc.</p></li>
+<li><p><strong>n_jobs</strong> (<em>int</em><em>, </em><em>(</em><em>Optional</em><em>, </em><em>default 4</em><em>)</em>) – the maximum cores to be used.</p></li>
+<li><p><strong>verbose</strong> (<em>boolean</em><em>, </em><em>(</em><em>Optional</em><em>, </em><em>default True</em><em>)</em>) – control the logging level</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="method">
+<dt id="qregpy.qreg.QReg.fit">
+<code class="descname">fit</code><span class="sig-paren">(</span><em>X</em>, <em>y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qregpy/qreg.html#QReg.fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qregpy.qreg.QReg.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>fit the QReg regression on the training data X and y.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – the independent variables, like [[1,2],[2,4]]</p></li>
+<li><p><strong>y</strong> (<em>numpy.ndarray</em>) – the dependent variables, like [4, 8]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the regression model</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#qregpy.qreg.QReg" title="qregpy.qreg.QReg">QReg</a></p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">qregpy</span> <span class="k">import</span> <span class="n">qreg</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># load the files</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;/data/10k.csv&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">headerX</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ss_list_price&quot;</span><span class="p">,</span> <span class="s2">&quot;ss_wholesale_cost&quot;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">headerY</span> <span class="o">=</span> <span class="s2">&quot;ss_wholesale_cost&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># prepare X and y</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">headerX</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">headerY</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+<span class="gp">&gt;&gt;&gt; </span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># train the regression using base models linear regression and XGBoost regression.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">reg</span> <span class="o">=</span> <span class="n">qreg</span><span class="o">.</span><span class="n">QReg</span><span class="p">(</span><span class="n">base_models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span><span class="s2">&quot;xgboost&quot;</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># make predictions</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">reg</span><span class="o">.</span><span class="n">predict</span><span class="p">([[</span><span class="mf">93.35</span><span class="p">,</span> <span class="mf">53.04</span><span class="p">],</span> <span class="p">[</span><span class="mf">60.84</span><span class="p">,</span> <span class="mf">41.96</span><span class="p">]])</span>
+<span class="go">[23.0, 11.1]</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>fit() receives X and y</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="qregpy.qreg.QReg.predict">
+<code class="descname">predict</code><span class="sig-paren">(</span><em>points</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qregpy/qreg.html#QReg.predict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qregpy.qreg.QReg.predict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a prediction for given points</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>points</strong> (<em>numpy.ndarray</em>) – like [[1,2],[2,4]],  to make predictions for point [1,2] and point [2,4]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the predictions for points</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List of predictions</p>
+</dd>
+<dt class="field-even">Example</dt>
+<dd class="field-even"><p></p></dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">qregpy</span> <span class="k">import</span> <span class="n">qreg</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># load the files</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;/data/10k.csv&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">headerX</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ss_list_price&quot;</span><span class="p">,</span> <span class="s2">&quot;ss_wholesale_cost&quot;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">headerY</span> <span class="o">=</span> <span class="s2">&quot;ss_wholesale_cost&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># prepare X and y</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">headerX</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">headerY</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+<span class="gp">&gt;&gt;&gt; </span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># train the regression using base models linear regression and XGBoost regression.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">reg</span> <span class="o">=</span> <span class="n">qreg</span><span class="o">.</span><span class="n">QReg</span><span class="p">(</span><span class="n">base_models</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span><span class="s2">&quot;xgboost&quot;</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># make predictions</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">reg</span><span class="o">.</span><span class="n">predict</span><span class="p">([[</span><span class="mf">93.35</span><span class="p">,</span> <span class="mf">53.04</span><span class="p">],</span> <span class="p">[</span><span class="mf">60.84</span><span class="p">,</span> <span class="mf">41.96</span><span class="p">]])</span>
+<span class="go">[23.0, 11.1]</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The input points should be numpy.ndarray</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="qregpy.qreg.QReg.deploy_sklearn_linear_regression">
+<code class="descname">deploy_sklearn_linear_regression</code><span class="sig-paren">(</span><em>X</em>, <em>y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qregpy/qreg.html#QReg.deploy_sklearn_linear_regression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qregpy.qreg.QReg.deploy_sklearn_linear_regression" title="Permalink to this definition">¶</a></dt>
+<dd><p>train the linear regression</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – the independent variables, like [[1,2],[2,4]]</p></li>
+<li><p><strong>y</strong> (<em>numpy.ndarray</em>) – the dependent variables, like [4, 8]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the linear regression model</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>LinearRegression</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="qregpy.qreg.QReg.deploy_sklearn_polynomial_regression">
+<code class="descname">deploy_sklearn_polynomial_regression</code><span class="sig-paren">(</span><em>X</em>, <em>y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qregpy/qreg.html#QReg.deploy_sklearn_polynomial_regression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qregpy.qreg.QReg.deploy_sklearn_polynomial_regression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Train the polynomial regression</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – the independent variables, like [[1,2],[2,4]]</p></li>
+<li><p><strong>y</strong> (<em>numpy.ndarray</em>) – the dependent variables, like [4, 8]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the polynomial regression model</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>an polynomial regression object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="qregpy.qreg.QReg.deploy_model_sklearn_decision_tree_regression">
+<code class="descname">deploy_model_sklearn_decision_tree_regression</code><span class="sig-paren">(</span><em>X</em>, <em>y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qregpy/qreg.html#QReg.deploy_model_sklearn_decision_tree_regression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qregpy.qreg.QReg.deploy_model_sklearn_decision_tree_regression" title="Permalink to this definition">¶</a></dt>
+<dd><p>train the decision tree regression</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – the independent variables, like [[1,2],[2,4]]</p></li>
+<li><p><strong>y</strong> (<em>numpy.ndarray</em>) – the dependent variables, like [4, 8]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the decision tree regression model</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>DecisionTreeRegressor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="qregpy.qreg.QReg.deploy_xgboost_regression">
+<code class="descname">deploy_xgboost_regression</code><span class="sig-paren">(</span><em>X</em>, <em>y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qregpy/qreg.html#QReg.deploy_xgboost_regression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qregpy.qreg.QReg.deploy_xgboost_regression" title="Permalink to this definition">¶</a></dt>
+<dd><p>train the XGBoost regression</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – the independent variables, like [[1,2],[2,4]]</p></li>
+<li><p><strong>y</strong> (<em>numpy.ndarray</em>) – the dependent variables, like [4, 8]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the XGBoost regression model</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>XGBRegressor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="qregpy.qreg.QReg.deploy_sklearn_gradient_tree_boosting">
+<code class="descname">deploy_sklearn_gradient_tree_boosting</code><span class="sig-paren">(</span><em>X</em>, <em>y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qregpy/qreg.html#QReg.deploy_sklearn_gradient_tree_boosting"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qregpy.qreg.QReg.deploy_sklearn_gradient_tree_boosting" title="Permalink to this definition">¶</a></dt>
+<dd><p>train the gradient tree boosting regression</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – the independent variables, like [[1,2],[2,4]]</p></li>
+<li><p><strong>y</strong> (<em>numpy.ndarray</em>) – the dependent variables, like [4, 8]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>the gradient tree boosting regression model</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>GradientBoostingRegressor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="qregpy.qreg.QReg.deploy_models">
+<code class="descname">deploy_models</code><span class="sig-paren">(</span><em>X</em>, <em>y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qregpy/qreg.html#QReg.deploy_models"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qregpy.qreg.QReg.deploy_models" title="Permalink to this definition">¶</a></dt>
+<dd><p>train the base regression models</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – the independent variables, like [[1,2],[2,4]]</p></li>
+<li><p><strong>y</strong> (<em>numpy.ndarray</em>) – the dependent variables, like [4, 8]</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="qregpy.qreg.QReg.build_classifier_xgboost">
+<code class="descname">build_classifier_xgboost</code><span class="sig-paren">(</span><em>X</em>, <em>indexes</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/qregpy/qreg.html#QReg.build_classifier_xgboost"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#qregpy.qreg.QReg.build_classifier_xgboost" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build the XGBoost classifier for QReg.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>numpy.ndarray</em>) – the independent variables, like [[1,2],[2,4]]</p></li>
+<li><p><strong>indexes</strong> (<em>List of int</em>) – a list of index, showting the best base model</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-qregpy">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-qregpy" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">qregpy</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Qingzhi Ma.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.0.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/qregpy.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

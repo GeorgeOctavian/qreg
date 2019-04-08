@@ -4,3 +4,4 @@
 qregpy.egg-info/
 dist/
 build/
+!/docs/build/

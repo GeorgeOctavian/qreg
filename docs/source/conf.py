@@ -32,7 +32,8 @@ release = '0.1'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-'sphinx.ext.autodoc','sphinx.ext.todo', 'sphinx.ext.viewcode'
+'sphinx.ext.autodoc','sphinx.ext.todo', 'sphinx.ext.viewcode',
+'rinoh.frontend.sphinx'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -89,3 +90,13 @@ def add_directive_header_no_object_base(self, *args, **kwargs):
     return result
 
 ClassDocumenter.add_directive_header = add_directive_header_no_object_base
+
+
+
+
+# latex_elements{
+#     'papersize':'letterpaper',
+#     'pointsize':'10pt',
+#     'preamble':'',
+#     'figure_align':'htbp'
+# }
