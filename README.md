@@ -50,7 +50,7 @@ reg.predict([[93.35, 53.04], [60.84, 41.96]])
 ```
 
 
-### Example III (Generate Samples First)
+### Example III (Generate Samples First, scaled version)
 
 ```
 from qregpy import qreg, sampling
