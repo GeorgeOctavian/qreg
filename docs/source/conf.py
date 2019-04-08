@@ -59,7 +59,7 @@ html_static_path = ['_static']
 
 
 
-
+autodoc_member_order = 'bysource'
 
 
 
