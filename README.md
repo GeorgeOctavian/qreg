@@ -2,7 +2,8 @@
 
 ## Overview
 
-This project implements the Query-Centric Regression, named QReg.
+This project implements QReg: Query-Centric Regression for In-DBMS Analytics. 22nd International Workshop On Design, Optimization, Languages and Analytical Processing of Big Data (DOLAP 2020).
+Paper is available at http://ceur-ws.org/Vol-2572/paper6.pdf.
 QReg is an ensemble method based on various base regression models.
 
 Current QReg supports linear, polynomial, decision tree, xgboost, gboosting regression as its base models.
